@@ -8,3 +8,4 @@ safetensors
 xformers
 omegaconf
 Pillow
+clip-interrogator==0.5.4
