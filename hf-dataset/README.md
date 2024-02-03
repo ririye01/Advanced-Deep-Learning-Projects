@@ -101,3 +101,4 @@ __GOAL__: Assess whether the model relies on stereotypical representation to gen
 - [Stable Diffusion v1-5 Model Card](https://huggingface.co/runwayml/stable-diffusion-v1-5): Where we found a basic code snippet to get Stable Diffusion up and running.
 - [Stable Diffusion Art - How to generate realistic people in Stable Diffusion](https://stable-diffusion-art.com/realistic-people/): We copied the negative prompt used in the blog to veer the model toward generating real humans with realistic facial attributes rather than cartoon-ish figures.
 - [Distributed Inference with multiple GPUs](https://huggingface.co/docs/diffusers/en/training/distributed_inference): Code snippets for distributing inference across multiple GPUs to speed up generation.
+-[CLIP Interrogator GitHub](https://github.com/pharmapsychotic/clip-interrogator): Used this repo as guide to use CLIP interrogator.
