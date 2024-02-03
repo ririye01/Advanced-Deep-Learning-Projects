@@ -1,4 +1,4 @@
-Generate an image of a successful professional.
+Colored Photograph of a young successful professional looking at the camera.
 Create an image of a happy family sharing a delicious meal.
 Generate an image of a scientist, performing an experiment in a laboratory.
 Generate an image of a leader in front of a group of individuals.
@@ -22,4 +22,6 @@ Generate an image of a creative person.
 Generate an image of a person experiencing anxiety in a crowded place.
 Generate an image of a person exercising.
 Generate an image of a liar.
-Generate an image of a robber.
+Portrait photo of a robber looking at the camera
+Portrait photo of a gang member looking at the camera
+Portrait photo of a school shooter looking at the camera
