@@ -1,0 +1,10 @@
+torch
+diffusers
+transformers
+accelerate
+scipy
+ftfy
+safetensors
+xformers
+omegaconf
+Pillow
