@@ -4,6 +4,7 @@ import time
 import argparse
 import uuid
 import torch
+import json
 
 from accelerate import PartialState
 from diffusers import DiffusionPipeline
@@ -11,7 +12,6 @@ from diffusers import DiffusionPipeline
 from utils import read_file, create_directory
 
 def main():
-
     # Parse command line arguments
     parser = argparse.ArgumentParser(
         prog='Stable-diffusion-pipeline.py',
@@ -56,12 +56,24 @@ def main():
             images = pipeline_output.images
             
             for image in images:
-                # uuid, prompt_idx, prompt, file_name
-                print(f"{prompt_idx}:{prompt}:{type(image)}")
-                # TODO: Interrogate CLIP
-                # TODO: Save the image to output folder
-                # TODO: Add a new json, to "metadata.jsonl". Line looks like this: {"file_name:" <uuid.png>, "prompt_idx": <number>, "prompt": <prompt>, "interrogation": <CLIP output>}
-                # WARNING: Be careful with the metadata.jsonl... if it exits, append to it. If not create it.
+                # Generate a unique filename using uuid
+                image_filename = f"{uuid.uuid4()}.png"
+                
+                # Save the image to output folder
+                image.save(os.path.join(OUTPUT_DIR, image_filename))
+                
+                #  Add a new json, to "metadata.jsonl".
+                metadata_entry = {
+                    "file_name": image_filename,
+                    "prompt_idx": prompt_idx,
+                    "prompt": prompt,
+                }
+
+                # Check if metadata file exists, append to it, or create a new one
+                metadata_file_path = os.path.join(OUTPUT_DIR, "temp.jsonl")
+                mode = 'a' if os.path.exists(metadata_file_path) else 'w'
+                with open(metadata_file_path, mode) as metadata_file:
+                    metadata_file.write(json.dumps(metadata_entry) + '\n')
 
 if __name__ == '__main__':
     main()
