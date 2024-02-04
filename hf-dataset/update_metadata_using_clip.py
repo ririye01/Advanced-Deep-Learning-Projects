@@ -72,8 +72,8 @@ def main():
         description='Generate clip interrogations for images'
     )
 
-    parser.add_argument('temp_jsonl_path', help='The model id of a pretrained stable diffusion model hosted inside a model repo on huggingface.co.')
-    parser.add_argument('output_dir', help='The path to the files containing the prompts to use')
+    parser.add_argument('temp_jsonl_path', help='The path to the temporary .jsonl file to be read is located.')
+    parser.add_argument('output_dir', help='The output directory where the Hugging face metadata .jsonl file is to be written.')
     
     args = parser.parse_args()
 
