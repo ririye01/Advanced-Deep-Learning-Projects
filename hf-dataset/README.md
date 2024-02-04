@@ -135,4 +135,4 @@ TODO: Explain the guidelines for contributing to this folder. This could include
 
 - [Distributed Inference with multiple GPUs](https://huggingface.co/docs/diffusers/en/training/distributed_inference): Code snippets for distributing inference across multiple GPUs to speed up generation.
 
--[CLIP Interrogator GitHub](https://github.com/pharmapsychotic/clip-interrogator): Used this repo as guide to use CLIP interrogator.
+- [CLIP Interrogator GitHub](https://github.com/pharmapsychotic/clip-interrogator): Used this repo as a guide to use CLIP interrogator.
