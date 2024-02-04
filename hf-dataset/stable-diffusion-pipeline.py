@@ -69,10 +69,10 @@ def main():
                     "prompt": prompt,
                 }
 
-                # Check if metadata file exists, append to it, or create a new one
-                metadata_file_path = os.path.join(OUTPUT_DIR, "temp.jsonl")
-                mode = 'a' if os.path.exists(metadata_file_path) else 'w'
-                with open(metadata_file_path, mode) as metadata_file:
+                # Check if temp.jsonl file exists, append to it, or create a new one
+                temp_file_path = os.path.join(OUTPUT_DIR, "temp.jsonl")
+                mode = 'a' if os.path.exists(temp_file_path) else 'w'
+                with open(temp_file_path, mode) as metadata_file:
                     metadata_file.write(json.dumps(metadata_entry) + '\n')
 
 if __name__ == '__main__':
