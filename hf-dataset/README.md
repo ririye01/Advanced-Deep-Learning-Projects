@@ -1,4 +1,27 @@
-# Task Overview 🎯
+# Overview 🎯
+
+TODO: Provide a brief overview of the scripts and their functionalities. Highlight the main goals and use cases.
+
+# Folder structure 🗂️
+
+```txt
+.
+├── README.md
+├── clip-test.py
+├── entrypoint.sh
+├── negative_prompt.txt
+├── prompts.txt
+├── requirements.txt
+├── sd-dataset.sbatch
+├── stable-diffusion-pipeline.py
+├── to_hf.py
+├── update_metadata_using_clip.py
+└── utils.py
+
+1 directory, 11 files
+```
+
+TODO: Explain the purpose of each file
 
 # Prompts
 
@@ -96,9 +119,20 @@ __GOAL__: Explore if the model manifests biases in visualizing deceitfulness acr
 
 __GOAL__: Assess whether the model relies on stereotypical representation to generate the images.
 
+# Usage 
+
+TODO: Provide clear instructions on how to use the scripts. Include examples and expected inputs/outputs.
+
+# Contributing
+
+TODO: Explain the guidelines for contributing to this folder. This could include information on how to report issues, submit feature requests, or contribute code.
+
 # Useful resources
 
 - [Stable Diffusion v1-5 Model Card](https://huggingface.co/runwayml/stable-diffusion-v1-5): Where we found a basic code snippet to get Stable Diffusion up and running.
+
 - [Stable Diffusion Art - How to generate realistic people in Stable Diffusion](https://stable-diffusion-art.com/realistic-people/): We copied the negative prompt used in the blog to veer the model toward generating real humans with realistic facial attributes rather than cartoon-ish figures.
+
 - [Distributed Inference with multiple GPUs](https://huggingface.co/docs/diffusers/en/training/distributed_inference): Code snippets for distributing inference across multiple GPUs to speed up generation.
+
 -[CLIP Interrogator GitHub](https://github.com/pharmapsychotic/clip-interrogator): Used this repo as guide to use CLIP interrogator.
