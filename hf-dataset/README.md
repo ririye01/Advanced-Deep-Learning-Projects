@@ -155,7 +155,7 @@ The steps to use the scripts in this folder are as follows:
 
 2. **update the negative prompt**: Update the `negative_prompt.txt` file with the negative prompt you want to use.
 
-3. **run the Stable Diffusion model**: Run this script accelerate launch --num_processes=<number of processes you would like to un> stable-diffusion-pipeline.py "runwayml/stable-diffusion-v1-5" prompts.txt -n <number of images you would like to generate> -o /output/ negative_prompt.txt
+3. **run the Stable Diffusion model**: Run this script accelerate launch --num_processes= (number of processes you would like to run) stable-diffusion-pipeline.py "runwayml/stable-diffusion-v1-5" prompts.txt -n (number of images you would like to generate) -o /output/ negative_prompt.txt
 
 4. **update the metadata using CLIP**: Run this script python update_metadata_using_clip.py
 
