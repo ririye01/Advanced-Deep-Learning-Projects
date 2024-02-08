@@ -23,6 +23,8 @@ This folder contains scripts to generate images using the Stable Diffusion 1.5 m
 
 # File Explanation 📁
 
+## hf_dataset
+
 - `clip-test.py`: A script to test the CLIP interrogator on a given image.
 
 - `entrypoint.sh`: A bash script to run the Stable Diffusion model.
