@@ -1,0 +1,2 @@
+# Make sure git ignores the data
+reference_diffusion_dataset.parquet
