@@ -20,7 +20,8 @@ def download_huggingface_data(
 
 
 if __name__ == "__main__":
-    download_huggingface_data(
-        dataset_path="CS-8321/demo_dataset",
-        output_folder="../data/",
-    )
+    for stable_diffusion_model in ["sd1.5", "sdxl"]:
+        download_huggingface_data(
+            dataset_path=f"CS-8321/{stable_diffusion_model}-images",
+            output_folder=f"../data/{stable_diffusion_model}-images",
+        )
