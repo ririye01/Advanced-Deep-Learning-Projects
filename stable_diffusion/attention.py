@@ -1,87 +1,121 @@
-# External
 import torch
+from torch import nn
 from torch.nn import functional as F
 import math
 
-# Self Attention
-class SelfAttention(torch.nn.Module):
-  def __init__(self, n_heads, d_embed, in_proj_bias = True, out_proj_bias = True):
-    super().__init__()
-    # Combine All Projections
-    self.in_proj = torch.nn.Linear(d_embed, 3 * d_embed, bias = in_proj_bias)
-    self.out_proj = torch.nn.Linear(d_embed, d_embed, bias = out_proj_bias)
-    self.d_embed = d_embed
-    self.n_heads = n_heads
-    self.head_dim = d_embed // n_heads
+class SelfAttention(nn.Module):
+    def __init__(self, n_heads, d_embed, in_proj_bias = True, out_proj_bias = True):
+        super().__init__()
+        # Combine WQ, WK, WV (Projections) Into One Matrix
+        self.in_proj = nn.Linear(d_embed, 3 * d_embed, bias = in_proj_bias)
+        # WO (Output) Projection Matrix
+        self.out_proj = nn.Linear(d_embed, d_embed, bias = out_proj_bias)
+        self.n_heads = n_heads
+        self.d_head = d_embed // n_heads
 
-  # Forward Pass
-  def forward(self, x: torch.Tensor, causal_mask = False) -> torch.Tensor:
-    # Extract Shape
-    input_shape = x.shape
-    batch_size, seq_len, d_embed = input_shape
+    def forward(self, x, causal_mask = False):
+        # x: # (Batch_Size, Seq_Len, Dim)
 
-    # Q, K, V
-    interim_shape = (batch_size, seq_len, self.n_heads, self.head_dim)
-    q, k, v = self.in_proj(x).chunk(3, dim = -1)
-    q = q.view(interim_shape).transpose(1, 2)
-    k = k.view(interim_shape).transpose(1, 2)
-    v = v.view(interim_shape).transpose(1, 2)
+        # (Batch_Size, Seq_Len, Dim)
+        input_shape = x.shape 
+        
+        # (Batch_Size, Seq_Len, Dim)
+        batch_size, sequence_length, d_embed = input_shape 
 
-    # QK^T
-    weight = q @ k.transpose(-1, -2)
+        # (Batch_Size, Seq_Len, H, Dim / H)
+        interim_shape = (batch_size, sequence_length, self.n_heads, self.d_head) 
+
+        # (Batch_Size, Seq_Len, Dim) -> (Batch_Size, Seq_Len, Dim * 3) -> 3 Tensors Of Shape (Batch_Size, Seq_Len, Dim)
+        q, k, v = self.in_proj(x).chunk(3, dim = -1)
+        
+        # (Batch_Size, Seq_Len, Dim) -> (Batch_Size, Seq_Len, H, Dim / H) -> (Batch_Size, H, Seq_Len, Dim / H)
+        q = q.view(interim_shape).transpose(1, 2)
+        k = k.view(interim_shape).transpose(1, 2)
+        v = v.view(interim_shape).transpose(1, 2)
+
+        # (Batch_Size, H, Seq_Len, Dim) @ (Batch_Size, H, Dim, Seq_Len) -> (Batch_Size, H, Seq_Len, Seq_Len)
+        weight = q @ k.transpose(-1, -2)
+        
+        if causal_mask:
+            # Mask Upper Triangular (Above Principal Diagonal) With -inf
+            mask = torch.ones_like(weight, dtype = torch.bool).triu(1) 
+            weight.masked_fill_(mask, -torch.inf) 
+        
+        # Divide By Dimension (Dim / H, d_k)
+        # (Batch_Size, H, Seq_Len, Seq_Len) -> (Batch_Size, H, Seq_Len, Seq_Len)
+        weight /= math.sqrt(self.d_head) 
+
+        # (Batch_Size, H, Seq_Len, Seq_Len) -> (Batch_Size, H, Seq_Len, Seq_Len)
+        weight = F.softmax(weight, dim = -1) 
+
+        # (Batch_Size, H, Seq_Len, Seq_Len) @ (Batch_Size, H, Seq_Len, Dim / H) -> (Batch_Size, H, Seq_Len, Dim / H)
+        output = weight @ v
+
+        # (Batch_Size, H, Seq_Len, Dim / H) -> (Batch_Size, Seq_Len, H, Dim / H)
+        output = output.transpose(1, 2) 
+
+        # (Batch_Size, Seq_Len, H, Dim / H) -> (Batch_Size, Seq_Len, Dim)
+        output = output.reshape(input_shape) 
+
+        # (Batch_Size, Seq_Len, Dim) -> (Batch_Size, Seq_Len, Dim)
+        output = self.out_proj(output) 
+        
+        # (Batch_Size, Seq_Len, Dim)
+        return output
+
+class CrossAttention(nn.Module):
+    def __init__(self, n_heads, d_embed, d_cross, in_proj_bias = True, out_proj_bias = True):
+        super().__init__()
+        self.q_proj = nn.Linear(d_embed, d_embed, bias = in_proj_bias)
+        self.k_proj = nn.Linear(d_cross, d_embed, bias = in_proj_bias)
+        self.v_proj = nn.Linear(d_cross, d_embed, bias = in_proj_bias)
+        self.out_proj = nn.Linear(d_embed, d_embed, bias = out_proj_bias)
+        self.n_heads = n_heads
+        self.d_head = d_embed // n_heads
     
-    # Mask (Fill Triu With -Inf)
-    if causal_mask:
-      mask = torch.ones_like(weight, dtype = torch.bool).triu(1)
-      weight.masked_fill_(mask, -torch.inf) 
+    def forward(self, x, y):
+        # x (latent): # (Batch_Size, Seq_Len_Q, Dim_Q)
+        # y (context): # (Batch_Size, Seq_Len_KV, Dim_KV) = (Batch_Size, 77, 768)
 
-    # Softmax
-    weight /= math.sqrt(self.head_dim)
-    weight = F.softmax(weight, dim = -1)
+        # Divide Each Embedding Of Q Into Multiple Heads (d_Head * n_Heads = Dim_Q)
+        input_shape = x.shape
+        batch_size, sequence_length, d_embed = input_shape
+        interim_shape = (batch_size, -1, self.n_heads, self.d_head)
+        
+        # (Batch_Size, Seq_Len_Q, Dim_Q) -> (Batch_Size, Seq_Len_Q, Dim_Q)
+        q = self.q_proj(x)
+        # (Batch_Size, Seq_Len_KV, Dim_KV) -> (Batch_Size, Seq_Len_KV, Dim_Q)
+        k = self.k_proj(y)
+        # (Batch_Size, Seq_Len_KV, Dim_KV) -> (Batch_Size, Seq_Len_KV, Dim_Q)
+        v = self.v_proj(y)
 
-    # V, Transpose
-    output = weight @ v
-    output = output.transpose(1, 2).reshape(input_shape)
-    output = self.out_proj(output)
-    return output
+        # (Batch_Size, Seq_Len_Q, Dim_Q) -> (Batch_Size, Seq_Len_Q, H, Dim_Q / H) -> (Batch_Size, H, Seq_Len_Q, Dim_Q / H)
+        q = q.view(interim_shape).transpose(1, 2) 
+        # (Batch_Size, Seq_Len_KV, Dim_Q) -> (Batch_Size, Seq_Len_KV, H, Dim_Q / H) -> (Batch_Size, H, Seq_Len_KV, Dim_Q / H)
+        k = k.view(interim_shape).transpose(1, 2) 
+        # (Batch_Size, Seq_Len_KV, Dim_Q) -> (Batch_Size, Seq_Len_KV, H, Dim_Q / H) -> (Batch_Size, H, Seq_Len_KV, Dim_Q / H)
+        v = v.view(interim_shape).transpose(1, 2) 
+        
+        # (Batch_Size, H, Seq_Len_Q, Dim_Q / H) @ (Batch_Size, H, Dim_Q / H, Seq_Len_KV) -> (Batch_Size, H, Seq_Len_Q, Seq_Len_KV)
+        weight = q @ k.transpose(-1, -2)
+        
+        # (Batch_Size, H, Seq_Len_Q, Seq_Len_KV)
+        weight /= math.sqrt(self.d_head)
+        
+        # (Batch_Size, H, Seq_Len_Q, Seq_Len_KV)
+        weight = F.softmax(weight, dim = -1)
+        
+        # (Batch_Size, H, Seq_Len_Q, Seq_Len_KV) @ (Batch_Size, H, Seq_Len_KV, Dim_Q / H) -> (Batch_Size, H, Seq_Len_Q, Dim_Q / H)
+        output = weight @ v
+        
+        # (Batch_Size, H, Seq_Len_Q, Dim_Q / H) -> (Batch_Size, Seq_Len_Q, H, Dim_Q / H)
+        output = output.transpose(1, 2).contiguous()
+        
+        # (Batch_Size, Seq_Len_Q, H, Dim_Q / H) -> (Batch_Size, Seq_Len_Q, Dim_Q)
+        output = output.view(input_shape)
+        
+        # (Batch_Size, Seq_Len_Q, Dim_Q) -> (Batch_Size, Seq_Len_Q, Dim_Q)
+        output = self.out_proj(output)
 
-# Cross Attention
-class CrossAttention(torch.nn.Module):
-  def __init__(self, n_heads, d_embed, d_cross, in_proj_bias = True, out_proj_bias = True):
-    super().__init__()
-    # K, V Crossed, Q Projected
-    self.q_proj = torch.nn.Linear(d_embed, d_embed, bias = in_proj_bias)
-    self.k_proj = torch.nn.Linear(d_cross, d_embed, bias = in_proj_bias)
-    self.v_proj = torch.nn.Linear(d_cross, d_embed, bias = in_proj_bias)
-    self.out_proj = torch.nn.Linear(d_embed, d_embed, bias=out_proj_bias)
-    self.d_embed = d_embed
-    self.n_heads = n_heads
-    self.head_dim = d_embed // n_heads
-
-  # Forward Pass (x: Latent, cond: Conditioning / Context)
-  def forward(self, x: torch.Tensor, cond: torch.Tensor) -> torch.Tesnor:
-    # Extract Shape
-    input_shape = x.shape
-    batch_size, seq_len, d_embed = input_shape
-
-    # Divide Each Q Embedding Into Multiple Heads (n_heads * head_dim = dim_Q)
-    interim_shape = (batch_size, -1, self.n_heads, self.head_dim)
-    q = self.q_proj(x).view(interim_shape).transpose(1, 2)
-    k = self.k_proj(cond).view(interim_shape).transpose(1, 2)
-    v = self.v_proj(cond).view(interim_shape).transpose(1, 2)
-
-    # Attention
-    weight = q @ k.transpose(-1, -2)
-    weight /= math.sqrt(self.head_dim)
-    weight = F.softmax(weight, dim = -1)
-    output = weight @ v
-
-    # Contiguous => Memory Locations Close
-    output = output.transpose(1, 2).contiguous().view(input_shape)
-
-    # Output Projection
-    output = self.out_proj(output)
-
-    # Return
-    return output
-    
+        # (Batch_Size, Seq_Len_Q, Dim_Q)
+        return output
