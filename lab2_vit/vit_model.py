@@ -65,3 +65,11 @@ class MultiHeadSelfAttention(nn.Module):
     def forward(self, sequences):
         # TODO: Implement forward pass
         pass
+
+# Trevor
+class ViTBlock(nn.Module):
+    pass
+    
+# Trevor
+class ViT(nn.Module):
+    pass
