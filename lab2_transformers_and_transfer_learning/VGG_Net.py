@@ -67,7 +67,7 @@ class VGG_Net(nn.Module):
         vgg_type: str = "VGG16",
     ) -> None:
         """
-        This implementation of VGG_19 works on 64 x 64 x `num_channels` images.
+        This implementation of VGG_19 works on 224 x 224 x `num_channels` images.
 
         Args:
             input_channels (int): Color channels for image. Default is 3.
@@ -88,7 +88,7 @@ class VGG_Net(nn.Module):
         # Establish the forward connecting sequence
         output_channel_count = 512
         self.fcs = nn.Sequential(
-            nn.Linear(output_channel_count * 2 * 2, 4096),
+            nn.Linear(output_channel_count * 7 * 7, 4096),
             nn.ReLU(),
             nn.Dropout(p=0.5),
             nn.Linear(4096, 4096),
@@ -140,6 +140,7 @@ class VGG_Net(nn.Module):
                 neural_network_layers.append(max_pooling_layer)
 
         return nn.Sequential(*neural_network_layers)
+
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.convolutional_layers(x)
