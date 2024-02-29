@@ -1,0 +1,3 @@
+# Make sure ImageNet is not pushed up here
+./train
+./test

@@ -1,6 +1,10 @@
+import torch
 from torch.utils.data.distributed import DistributedSampler
 from torch.nn.parallel import DistributedDataParallel as DDP
 import torch.distributed as dist
+from torchvision.datasets import ImageNet
+
+import os
 
 from VGG_Net import VGG_Net
 
@@ -21,7 +25,7 @@ def init_distributed() -> None:
     try:
         dist.init_process_group(
             backend="nccl",
-            init_method=dist_url,
+            init_method=distributed_url,
             world_size=world_size,
             rank=rank,
         )
@@ -29,17 +33,28 @@ def init_distributed() -> None:
     except RuntimeError:
         dist.init_process_group(
             backend="gloo",
-            init_method=dist_url,
+            init_method=distributed_url,
             world_size=world_size,
             rank=rank,
         )
 
-    # this will make all .cuda() calls work properly
+    # this will make all `.cuda()` calls work properly
     torch.cuda.set_device(local_rank)
 
     # synchronizes all the threads to reach this point before moving on
     dist.barrier()
 
 
-if __name__ == "__main__":
+def _fetch_train_batch():
     pass
+
+def train() -> VGG_Net:
+    for batch in batches:
+        _fetch_train_batch()
+    return VGG_Net()
+
+
+if __name__ == "__main__":
+    init_distributed()
+
+    vgg_net = train()
