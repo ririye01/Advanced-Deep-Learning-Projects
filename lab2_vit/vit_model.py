@@ -53,7 +53,6 @@ class VITConfig:
     
 # ----------------------------- VIT MODEL -------------------------------------
     
-# NOTE: Kassi is implementing VIT Multi head attention module
 class MultiHeadSelfAttention(nn.Module):
     def __init__(self, config: VITConfig):
         super(MultiHeadSelfAttention).__init__()
