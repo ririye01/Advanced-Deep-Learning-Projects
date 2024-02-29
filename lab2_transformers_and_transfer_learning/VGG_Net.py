@@ -13,8 +13,49 @@ from typing import List, Dict, Union, Any
 VGG_TYPES: Dict[str, List[Any]] = {
     "VGG11": [64, "M", 128, "M", 256, 256, "M", 512, 512, "M", 512, 512, "M"],
     "VGG13": [64, 64, "M", 128, 128, "M", 256, 256, "M", 512, 512, "M", 512, 512, "M"],
-    "VGG16": [64, 64, "M", 128, 128, "M", 256, 256, 256, "M", 512, 512, 512, "M", 512, 512, 512, "M"],
-    "VGG19": [64, 64, "M", 128, 128, "M", 256, 256, 256, 256, "M", 512, 512, 512, 512, "M", 512, 512, 512, 512, "M"],
+    "VGG16": [
+        64,
+        64,
+        "M",
+        128,
+        128,
+        "M",
+        256,
+        256,
+        256,
+        "M",
+        512,
+        512,
+        512,
+        "M",
+        512,
+        512,
+        512,
+        "M",
+    ],
+    "VGG19": [
+        64,
+        64,
+        "M",
+        128,
+        128,
+        "M",
+        256,
+        256,
+        256,
+        256,
+        "M",
+        512,
+        512,
+        512,
+        512,
+        "M",
+        512,
+        512,
+        512,
+        512,
+        "M",
+    ],
 }
 
 
@@ -40,7 +81,9 @@ class VGG_Net(nn.Module):
         self.num_classes = num_classes
 
         # Specify convolutional layers based on `vgg_type` chosen by user
-        self.convolutional_layers: nn.Sequential = self._create_convolutional_layers(VGG_TYPES[vgg_type])
+        self.convolutional_layers: nn.Sequential = self._create_convolutional_layers(
+            VGG_TYPES[vgg_type]
+        )
 
         # Establish the forward connecting sequence
         output_channel_count = 512
@@ -54,11 +97,14 @@ class VGG_Net(nn.Module):
             nn.Linear(4096, num_classes),
         )
 
-
-    def _create_convolutional_layers(self, vgg_architecture: List[Union[int, str]]) -> nn.Sequential:
+    def _create_convolutional_layers(
+        self, vgg_architecture: List[Union[int, str]]
+    ) -> nn.Sequential:
         # Declare neural network layers as empty to begin with, then append Convolutional Blocks
         # and update input channels as we forward propogate through the network.
-        neural_network_layers: List[Union[nn.Conv2d, nn.BatchNorm2d, nn.ReLU, nn.MaxPool2d]] = []
+        neural_network_layers: List[
+            Union[nn.Conv2d, nn.BatchNorm2d, nn.ReLU, nn.MaxPool2d]
+        ] = []
         input_channel_count = self.input_channels
 
         for output_channel_label in vgg_architecture:
@@ -70,9 +116,9 @@ class VGG_Net(nn.Module):
                 conv2d_layer = nn.Conv2d(
                     in_channels=input_channel_count,
                     out_channels=output_channel_count,
-                    kernel_size=(3,3),
-                    stride=(1,1),
-                    padding=(1,1),
+                    kernel_size=(3, 3),
+                    stride=(1, 1),
+                    padding=(1, 1),
                 )
                 batch_normalization_layer = nn.BatchNorm2d(output_channel_count)
                 relu = nn.ReLU()
@@ -88,13 +134,12 @@ class VGG_Net(nn.Module):
             # Add a max pooling layer to reduce noise if we approach a "M"
             elif output_channel_label == "M":
                 max_pooling_layer = nn.MaxPool2d(
-                    kernel_size=(2,2),
-                    stride=(2,2),
+                    kernel_size=(2, 2),
+                    stride=(2, 2),
                 )
                 neural_network_layers.append(max_pooling_layer)
 
         return nn.Sequential(*neural_network_layers)
-
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.convolutional_layers(x)
