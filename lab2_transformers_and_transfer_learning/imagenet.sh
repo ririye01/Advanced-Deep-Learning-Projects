@@ -12,8 +12,15 @@
 echo "Downloading ImageNet"
 #######################################################################################################################
 # Download 2012 ImageNet dataset from source
-curl -O https://image-net.org/data/ILSVRC/2012/ILSVRC2012_img_train.tar ./ILSVRC2012_img_train.tar
-curl -O https://image-net.org/data/ILSVRC/2012/ILSVRC2012_img_val.tar ./ILSVRC2012_img_val.tar
+## Check if ILSVRC2012_img_train.tar exists and is at least 100GB
+if [ ! -f ./ILSVRC2012_img_train.tar ] || [ $(stat -c%s "./ILSVRC2012_img_train.tar") -lt 107374182400 ]; then
+    curl -O https://image-net.org/data/ILSVRC/2012/ILSVRC2012_img_train.tar
+fi
+
+## Check if ILSVRC2012_img_val.tar exists and is at least 4GB
+if [ ! -f ./ILSVRC2012_img_val.tar ] || [ $(stat -c%s "./ILSVRC2012_img_val.tar") -lt 4294967296 ]; then
+    curl -O https://image-net.org/data/ILSVRC/2012/ILSVRC2012_img_val.tar
+fi
 #######################################################################################################################
 echo "ImageNet Download Already Complete."
 
