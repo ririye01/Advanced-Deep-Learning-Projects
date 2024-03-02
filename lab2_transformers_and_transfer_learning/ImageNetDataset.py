@@ -9,9 +9,15 @@ from torchvision import models, transforms
 import numpy as np
 from torch import Tensor
 
+from typing import Optional
+
 
 class ImageNetDataset(Dataset):
-    def __init__(self, root_dir: str, transform: transforms.Compose = None) -> None:
+    def __init__(
+        self,
+        root_dir: str,
+        transform: Optional[transforms.Compose] = None,
+    ) -> None:
         self.root_dir = root_dir
         self.transform = transform
         self.data, self.labels = self.load_batches()
