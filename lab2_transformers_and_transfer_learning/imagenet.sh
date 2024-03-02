@@ -101,7 +101,9 @@ wget -qO- https://raw.githubusercontent.com/soumith/imagenetloader.torch/master/
 #  ├── ......
 #
 #
-# Check total files after extract
+# Navigate to root lab directory and check total files after extract
+cd ~/work/Advanced-Deep-Learning-Projects/lab2_transformers_and_transfer_learning
+#
 #
 find train/ -name "*.JPEG" | wc -l
 #  1281167
