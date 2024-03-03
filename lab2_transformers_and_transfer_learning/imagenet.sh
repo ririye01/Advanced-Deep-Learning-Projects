@@ -1,5 +1,4 @@
 #!/bin/sh
-
 #SBATCH -J imagenet-parse        # Job Name
 #SBATCH -p batch                 # (debug or batch)
 #SBATCH --exclusive
