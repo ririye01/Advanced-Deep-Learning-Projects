@@ -13,6 +13,12 @@
 # Move to Lab2 Transformers & Transfer Learning Directory
 cd ~/work/Advanced-Deep-Learning-Projects/lab2_transformers_and_transfer_learning
 
+# Activate conda environment
+module load conda
+conda create -n cs8321-lab2
+conda activate cs8321-lab2
+pip install -r requirements.txt
+
 #######################################################################################################################
 # Run script for training PyTorch model
 echo "Running torchrun"
