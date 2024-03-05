@@ -1,0 +1,16 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: Current File",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/lab2_vit/vit_model.py",
+      "args": [],
+      "python": "${command:python.interpreterPath}",
+      "env": {"CUDA_LAUNCH_BLOCKING": "1", "MASTER_ADDR": "localhost", "MASTER_PORT": "29502", "WORLD_SIZE": "1", "RANK": "0"},
+      "console": "integratedTerminal",
+      "justMyCode": false
+    }
+  ]
+}
