@@ -2,10 +2,11 @@ import torch
 from torch.utils.data.distributed import DistributedSampler
 from torch.nn.parallel import DistributedDataParallel as DDP
 import torch.distributed as dist
-from torchvision.datasets import ImageNet
+from torchvision.datasets as datasets
 
 
 import os
+from typing import Tuple
 
 from VGG_Net import VGG_Net
 
@@ -49,6 +50,13 @@ def init_distributed() -> None:
 def _fetch_train_batch():
     pass
 
+
+def _load_mnist_data() -> Tuple[datasets.MNIST, datasets.MNIST]:
+    mnist_trainset = datasets.MNIST(root='./data', train=True, download=True, transform=None)
+    mnist_valset   = datasets.MNIST(root='./data', train=False, download=True, transform=None)
+    return mnist_trainset, mnist_valset
+
+
 def train() -> VGG_Net:
     for batch in batches:
         _fetch_train_batch()
@@ -57,6 +65,7 @@ def train() -> VGG_Net:
 
 
 def main() -> None:
+    mnist_trainset, mnist_valset = _load_mnist_data()
 
 
 
