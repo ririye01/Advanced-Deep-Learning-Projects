@@ -16,7 +16,7 @@ if [ ! -f ./ILSVRC2012_img_train.tar ] || [ $(stat -c%s "./ILSVRC2012_img_train.
 fi
 
 # Extract training set; remove compressed file
-tar -xvf ILSVRC2012_img_train.tar && rm -f ILSVRC2012_img_train.tar
+# tar -xvf ILSVRC2012_img_train.tar && rm -f ILSVRC2012_img_train.tar
 #
 # At this stage imagenet/train will contain 1000 compressed .tar files, one for each category
 #
@@ -24,7 +24,7 @@ tar -xvf ILSVRC2012_img_train.tar && rm -f ILSVRC2012_img_train.tar
 #   1. create directory with same name as .tar file
 #   2. extract and copy contents of .tar file into directory
 #   3. remove .tar file
-find . -name "*.tar" | while read NAME ; do mkdir -p "${NAME%.tar}"; tar -xvf "${NAME}" -C "${NAME%.tar}"; rm -f "${NAME}"; done
+# find . -name "*.tar" | while read NAME ; do mkdir -p "${NAME%.tar}"; tar -xvf "${NAME}" -C "${NAME%.tar}"; rm -f "${NAME}"; done
 #
 # This results in a training directory like so:
 #

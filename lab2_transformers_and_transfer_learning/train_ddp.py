@@ -4,6 +4,7 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 import torch.distributed as dist
 from torchvision.datasets import ImageNet
 
+
 import os
 
 from VGG_Net import VGG_Net
@@ -54,7 +55,14 @@ def train() -> VGG_Net:
     return VGG_Net()
 
 
+
+def main() -> None:
+
+
+
 if __name__ == "__main__":
     init_distributed()
+    
 
-    vgg_net = train()
+
+    main()
