@@ -1,0 +1,207 @@
+Running torchrun
+[2024-03-05 19:09:59,854] torch.distributed.run: [WARNING] 
+[2024-03-05 19:09:59,854] torch.distributed.run: [WARNING] *****************************************
+[2024-03-05 19:09:59,854] torch.distributed.run: [WARNING] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+[2024-03-05 19:09:59,854] torch.distributed.run: [WARNING] *****************************************
+Downloading http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gzDownloading http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz
+
+Downloading http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz
+Downloading http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz
+Downloading http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz
+Downloading http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz
+Downloading http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz
+Downloading http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz
+Downloading http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz to ./data/MNIST/raw/train-images-idx3-ubyte.gz
+Downloading http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz to ./data/MNIST/raw/train-images-idx3-ubyte.gz
+Downloading http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz to ./data/MNIST/raw/train-images-idx3-ubyte.gz
+Downloading http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz to ./data/MNIST/raw/train-images-idx3-ubyte.gz
+Downloading http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz to ./data/MNIST/raw/train-images-idx3-ubyte.gz
+Downloading http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz to ./data/MNIST/raw/train-images-idx3-ubyte.gz
+Downloading http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz to ./data/MNIST/raw/train-images-idx3-ubyte.gz
+Downloading http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz to ./data/MNIST/raw/train-images-idx3-ubyte.gz
+  0%|          | 0/9912422 [00:00<?, ?it/s]  0%|          | 0/9912422 [00:00<?, ?it/s]  0%|          | 0/9912422 [00:00<?, ?it/s]  0%|          | 0/9912422 [00:00<?, ?it/s]  0%|          | 0/9912422 [00:00<?, ?it/s]  0%|          | 0/9912422 [00:00<?, ?it/s]  0%|          | 0/9912422 [00:00<?, ?it/s]  0%|          | 0/9912422 [00:00<?, ?it/s] 35%|███▌      | 3506176/9912422 [00:00<00:00, 35043078.40it/s] 33%|███▎      | 3276800/9912422 [00:00<00:00, 32595815.80it/s] 34%|███▍      | 3407872/9912422 [00:00<00:00, 33972565.45it/s] 36%|███▌      | 3538944/9912422 [00:00<00:00, 35290442.09it/s] 35%|███▍      | 3440640/9912422 [00:00<00:00, 34269007.09it/s] 32%|███▏      | 3145728/9912422 [00:00<00:00, 31235090.54it/s] 24%|██▍       | 2359296/9912422 [00:00<00:00, 23146367.91it/s] 37%|███▋      | 3670016/9912422 [00:00<00:00, 36693283.79it/s] 72%|███████▏  | 7176192/9912422 [00:00<00:00, 36006026.77it/s] 70%|██████▉   | 6914048/9912422 [00:00<00:00, 34554916.95it/s] 73%|███████▎  | 7241728/9912422 [00:00<00:00, 36184963.77it/s] 69%|██████▉   | 6848512/9912422 [00:00<00:00, 34273279.71it/s] 72%|███████▏  | 7110656/9912422 [00:00<00:00, 35488067.61it/s] 65%|██████▌   | 6455296/9912422 [00:00<00:00, 32158863.74it/s] 65%|██████▌   | 6455296/9912422 [00:00<00:00, 33498633.46it/s] 76%|███████▌  | 7536640/9912422 [00:00<00:00, 37725695.41it/s]100%|██████████| 9912422/9912422 [00:00<00:00, 36440002.98it/s]
+100%|██████████| 9912422/9912422 [00:00<00:00, 37762286.72it/s]
+100%|██████████| 9912422/9912422 [00:00<00:00, 34306618.98it/s]
+
+
+
+ 97%|█████████▋| 9568256/9912422 [00:00<00:00, 32698364.69it/s]
+ 94%|█████████▍| 9306112/9912422 [00:00<00:00, 31809672.31it/s]
+ 92%|█████████▏| 9109504/9912422 [00:00<00:00, 31128758.04it/s]
+Traceback (most recent call last):
+Traceback (most recent call last):
+  File "train_ddp.py", line 151, in <module>
+  File "train_ddp.py", line 151, in <module>
+Traceback (most recent call last):
+  File "train_ddp.py", line 151, in <module>
+100%|█████████▉| 9895936/9912422 [00:00<00:00, 33816435.89it/s]
+    main()
+  File "train_ddp.py", line 125, in main
+    main()
+  File "train_ddp.py", line 125, in main
+    main()
+  File "train_ddp.py", line 125, in main
+    mnist_trainset, mnist_valset = _load_mnist_data()
+  File "train_ddp.py", line 68, in _load_mnist_data
+    mnist_trainset, mnist_valset = _load_mnist_data()
+  File "train_ddp.py", line 68, in _load_mnist_data
+    mnist_trainset, mnist_valset = _load_mnist_data()
+  File "train_ddp.py", line 68, in _load_mnist_data
+    mnist_trainset = MNIST(root='./data', train=True, download=True, transform=transform)
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/mnist.py", line 99, in __init__
+    mnist_trainset = MNIST(root='./data', train=True, download=True, transform=transform)    
+mnist_trainset = MNIST(root='./data', train=True, download=True, transform=transform)
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/mnist.py", line 99, in __init__
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/mnist.py", line 99, in __init__
+
+Traceback (most recent call last):
+  File "train_ddp.py", line 151, in <module>
+100%|██████████| 9912422/9912422 [00:00<00:00, 33667651.30it/s]
+    main()
+  File "train_ddp.py", line 125, in main
+    mnist_trainset, mnist_valset = _load_mnist_data()
+  File "train_ddp.py", line 68, in _load_mnist_data
+    mnist_trainset = MNIST(root='./data', train=True, download=True, transform=transform)
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/mnist.py", line 99, in __init__
+
+
+Traceback (most recent call last):
+  File "train_ddp.py", line 151, in <module>
+Traceback (most recent call last):
+  File "train_ddp.py", line 151, in <module>
+
+Traceback (most recent call last):
+  File "train_ddp.py", line 151, in <module>
+    main()
+  File "train_ddp.py", line 125, in main
+    main()
+  File "train_ddp.py", line 125, in main
+    mnist_trainset, mnist_valset = _load_mnist_data()
+  File "train_ddp.py", line 68, in _load_mnist_data
+    mnist_trainset, mnist_valset = _load_mnist_data()
+  File "train_ddp.py", line 68, in _load_mnist_data
+    main()
+  File "train_ddp.py", line 125, in main
+    mnist_trainset = MNIST(root='./data', train=True, download=True, transform=transform)
+      File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/mnist.py", line 99, in __init__
+mnist_trainset = MNIST(root='./data', train=True, download=True, transform=transform)
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/mnist.py", line 99, in __init__
+    mnist_trainset, mnist_valset = _load_mnist_data()
+  File "train_ddp.py", line 68, in _load_mnist_data
+    mnist_trainset = MNIST(root='./data', train=True, download=True, transform=transform)
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/mnist.py", line 99, in __init__
+            self.download()self.download()    self.download()        
+
+self.download()
+self.download()    self.download()  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/mnist.py", line 187, in download
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/mnist.py", line 187, in download
+
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/mnist.py", line 187, in download
+
+self.download()
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/mnist.py", line 187, in download
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/mnist.py", line 187, in download
+
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/mnist.py", line 187, in download
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/mnist.py", line 187, in download
+        download_and_extract_archive(url, download_root=self.raw_folder, filename=filename, md5=md5)download_and_extract_archive(url, download_root=self.raw_folder, filename=filename, md5=md5)
+
+      File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/utils.py", line 434, in download_and_extract_archive
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/utils.py", line 434, in download_and_extract_archive
+download_and_extract_archive(url, download_root=self.raw_folder, filename=filename, md5=md5)    
+    download_and_extract_archive(url, download_root=self.raw_folder, filename=filename, md5=md5)download_and_extract_archive(url, download_root=self.raw_folder, filename=filename, md5=md5)  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/utils.py", line 434, in download_and_extract_archive
+
+
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/utils.py", line 434, in download_and_extract_archive
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/utils.py", line 434, in download_and_extract_archive
+    download_and_extract_archive(url, download_root=self.raw_folder, filename=filename, md5=md5)
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/utils.py", line 434, in download_and_extract_archive
+    download_and_extract_archive(url, download_root=self.raw_folder, filename=filename, md5=md5)
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/utils.py", line 434, in download_and_extract_archive
+
+Traceback (most recent call last):
+  File "train_ddp.py", line 151, in <module>
+    main()
+  File "train_ddp.py", line 125, in main
+    mnist_trainset, mnist_valset = _load_mnist_data()
+  File "train_ddp.py", line 68, in _load_mnist_data
+    mnist_trainset = MNIST(root='./data', train=True, download=True, transform=transform)
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/mnist.py", line 99, in __init__
+    self.download()
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/mnist.py", line 187, in download
+    download_and_extract_archive(url, download_root=self.raw_folder, filename=filename, md5=md5)
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/utils.py", line 434, in download_and_extract_archive
+    download_url(url, download_root, filename, md5)
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/utils.py", line 151, in download_url
+            download_url(url, download_root, filename, md5)    download_url(url, download_root, filename, md5)    download_url(url, download_root, filename, md5)
+download_url(url, download_root, filename, md5)
+download_url(url, download_root, filename, md5)
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/utils.py", line 151, in download_url
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/utils.py", line 151, in download_url
+
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/utils.py", line 151, in download_url
+
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/utils.py", line 151, in download_url
+      File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/utils.py", line 155, in download_url
+download_url(url, download_root, filename, md5)    
+download_url(url, download_root, filename, md5)  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/utils.py", line 151, in download_url
+
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/utils.py", line 151, in download_url
+            raise eraise e        raise e        
+
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/utils.py", line 144, in download_url
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/utils.py", line 144, in download_url
+raise eraise e
+raise eraise RuntimeError("File not found or corrupted.")
+
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/utils.py", line 144, in download_url
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/utils.py", line 144, in download_url
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/utils.py", line 144, in download_url
+
+
+      File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/utils.py", line 144, in download_url
+raise eRuntimeError
+: File not found or corrupted.  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/utils.py", line 144, in download_url
+
+    _urlretrieve(url, fpath)
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/utils.py", line 48, in _urlretrieve
+    _urlretrieve(url, fpath)
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/utils.py", line 48, in _urlretrieve
+    _urlretrieve(url, fpath)
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/utils.py", line 48, in _urlretrieve
+    _urlretrieve(url, fpath)
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/utils.py", line 48, in _urlretrieve
+    _urlretrieve(url, fpath)
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/utils.py", line 48, in _urlretrieve
+    _urlretrieve(url, fpath)
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/utils.py", line 48, in _urlretrieve
+    _urlretrieve(url, fpath)
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/utils.py", line 48, in _urlretrieve
+    _save_response_content(iter(lambda: response.read(chunk_size), b""), filename, length=response.length)
+      File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/utils.py", line 42, in _save_response_content
+_save_response_content(iter(lambda: response.read(chunk_size), b""), filename, length=response.length)
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/utils.py", line 43, in _save_response_content
+    _save_response_content(iter(lambda: response.read(chunk_size), b""), filename, length=response.length)
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/utils.py", line 42, in _save_response_content
+    _save_response_content(iter(lambda: response.read(chunk_size), b""), filename, length=response.length)
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/utils.py", line 42, in _save_response_content
+    _save_response_content(iter(lambda: response.read(chunk_size), b""), filename, length=response.length)
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/utils.py", line 43, in _save_response_content
+    _save_response_content(iter(lambda: response.read(chunk_size), b""), filename, length=response.length)    
+_save_response_content(iter(lambda: response.read(chunk_size), b""), filename, length=response.length)  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/utils.py", line 43, in _save_response_content
+
+  File "/users/ririye/.conda/envs/cs8321-lab1/lib/python3.8/site-packages/torchvision/datasets/utils.py", line 42, in _save_response_content
+    fh.write(chunk)
+OSError: [Errno 122] Disk quota exceeded
+        fh.write(chunk)pbar.update(len(chunk))
+
+OSError: [Errno 122] Disk quota exceeded
+OSError: [Errno 122] Disk quota exceeded
+    fh.write(chunk)
+OSError    pbar.update(len(chunk)): 
+[Errno 122] Disk quota exceeded
+OSError: [Errno 122] Disk quota exceeded
+    fh.write(chunk)
+OSError: [Errno 122] Disk quota exceeded
+    pbar.update(len(chunk))
+OSError: [Errno 122] Disk quota exceeded
