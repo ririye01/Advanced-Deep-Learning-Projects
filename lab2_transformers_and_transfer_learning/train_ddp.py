@@ -2,53 +2,12 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from torch.utils.data.distributed import DistributedSampler
-from torch.nn.parallel import DistributedDataParallel as DDP
-import torch.distributed as dist
 from torchvision import transforms
 from torchvision.datasets import MNIST
 from transformers import ViTConfig, ViTModel, ViTForImageClassification
 
 import os
-from typing import Tuple
-
-
-def init_distributed() -> None:
-    """
-    Sets up distributed trining ENV variables and backend.
-    """
-    os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
-
-    # Initializes the distributed backend which will take care of synchronizing nodes/GPUs
-    distributed_url = "env://"  # default
-
-    # only works with torch.distributed.launch // torchrun
-    rank = int(os.environ["RANK"])
-    world_size = int(os.environ["WORLD_SIZE"])
-    local_rank = int(os.environ["LOCAL_RANK"])
-
-    # Try the NCCL backend (has to do with CUDA)
-    try:
-        dist.init_process_group(
-            backend="nccl",
-            init_method=distributed_url,
-            world_size=world_size,
-            rank=rank,
-        )
-    # Use the gloo backend if nccl isn't supported
-    except RuntimeError:
-        dist.init_process_group(
-            backend="gloo",
-            init_method=distributed_url,
-            world_size=world_size,
-            rank=rank,
-        )
-
-    # this will make all `.cuda()` calls work properly
-    torch.cuda.set_device(local_rank)
-
-    # synchronizes all the threads to reach this point before moving on
-    dist.barrier()
+from typing import Tuple, Literal
 
 
 def _transform_mnist_image() -> transforms.Compose:
@@ -58,8 +17,9 @@ def _transform_mnist_image() -> transforms.Compose:
     """
     return transforms.Compose([
         transforms.Resize((224, 224)),  # Resize to the input size expected by ViT
+        transforms.Grayscale(num_output_channels=3),
         transforms.ToTensor(),
-        transforms.Normalize((0.5,), (0.5,)),  # Normalize for a single channel (gray)
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),  # Normalize across 3 output channels
     ])
 
 
@@ -85,7 +45,7 @@ def _modify_vit_model_for_mnist(model: ViTModel) -> nn.Module:
     return model
 
 
-def train(model, data_loader, criterion, optimizer, epoch, device):
+def train(model, data_loader, criterion, optimizer, epoch, device) -> float:
     model.train()
     total_loss = 0
     for batch_idx, (data, target) in enumerate(data_loader):
@@ -93,6 +53,9 @@ def train(model, data_loader, criterion, optimizer, epoch, device):
 
         optimizer.zero_grad()
         outputs = model(data)
+        # print(outputs)
+        # print(type(outputs))
+        # input()
         loss = criterion(outputs.logits, target)
         loss.backward()
         optimizer.step()
@@ -105,7 +68,7 @@ def train(model, data_loader, criterion, optimizer, epoch, device):
     return total_loss / len(data_loader.dataset)
 
 
-def validate(model, data_loader, criterion, device):
+def validate(model, data_loader, criterion, device) -> Tuple[float, float]:
     model.eval()
     validation_loss = 0
     correct = 0
@@ -113,39 +76,57 @@ def validate(model, data_loader, criterion, device):
         for data, target in data_loader:
             data, target = data.to(device), target.to(device)
             output = model(data)
+            print(output)
+            print(type(output))
+            input()
             validation_loss += criterion(output.logits, target).item()  # Sum up batch loss
             pred = output.logits.argmax(dim=1, keepdim=True)  # Get the index of the max log-probability
             correct += pred.eq(target.view_as(pred)).sum().item()
 
-    validation_loss /= len(data_loader.dataset)
-    print(f'\nValidation set: Average loss: {validation_loss:.4f}, Accuracy: {correct}/{len(data_loader.dataset)} ({100. * correct / len(data_loader.dataset):.0f}%)\n')
+    validation_loss = validation_loss / len(data_loader.dataset)
+    validation_accuracy = 100. * correct / len(data_loader.dataset)
+    print(f'\nValidation set: Average loss: {validation_loss:.4f}, Accuracy: {correct}/{len(data_loader.dataset)} ({validation_accuracy:.0f}%)\n')
+    return validation_loss, validation_accuracy
 
 
 def main() -> None:
+    DEVICE: Literal["cuda", "mps", "cpu"] = (
+        "cuda"
+        if torch.cuda.is_available()
+        else "mps"
+        if torch.backends.mps.is_available()
+        else "cpu"
+    )
+
     mnist_trainset, mnist_valset = _load_mnist_data()
+
     model = _load_vit_model()
-    model = _modify_vit_model_for_mnist(model).cuda()
+    model = _modify_vit_model_for_mnist(model).to(DEVICE)
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-    # Wrap the model for distributed training
-    model = DDP(model)
+    train_loader = DataLoader(mnist_trainset, batch_size=32, shuffle=True, sampler=None)
+    val_loader = DataLoader(mnist_valset, batch_size=32, shuffle=True, sampler=None)
 
-    train_sampler = DistributedSampler(mnist_trainset)
-    val_sampler = DistributedSampler(mnist_valset)
-
-    train_loader = DataLoader(mnist_trainset, batch_size=64, shuffle=False, sampler=train_sampler)
-    val_loader = DataLoader(mnist_valset, batch_size=64, shuffle=False, sampler=val_sampler)
-
-    epochs = 15
-    for epoch in range(epochs):
-        train_sampler.set_epoch(epoch)
-        train_loss = train(model, train_loader, criterion, optimizer, epoch, torch.device('cuda'))
-        validate(model, val_loader, criterion, torch.device('cuda'))
+    NUM_EPOCHS = 15
+    for epoch in range(NUM_EPOCHS):
+        train_loss = train(
+            model=model,
+            data_loader=train_loader,
+            criterion=criterion,
+            optimizer=optimizer,
+            epoch=epoch,
+            device=DEVICE,
+        )
+        val_loss = validate(
+            model=model,
+            data_loader=val_loader,
+            criterion=criterion,
+            device=DEVICE,
+        )
 
 
 
 if __name__ == "__main__":
-    init_distributed()
     main()
