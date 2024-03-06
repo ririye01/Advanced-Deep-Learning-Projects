@@ -1,23 +1,25 @@
 #!/bin/sh
 
-#SBATCH -J imagenet-vgg          # Job Name
+#SBATCH -J mnist-run             # Job Name
 #SBATCH -p batch                 # (debug or batch)
-#SBATCH --exclusive
 #SBATCH -o runjob.out            # Output file name
-#SBATCH --gres=gpu:8             # Number of GPUs to use
+#SBATCH --gres=gpu:4             # Number of GPUs to use
 #SBATCH --mail-user ririye@smu.edu
 #SBATCH --mail-type=ALL
-#SBATCH --mem=200GB
+#SBATCH --exclusive
+#SBATCH --mem=100GB
 
 
 # Move to Lab2 Transformers & Transfer Learning Directory
 cd ~/work/Advanced-Deep-Learning-Projects/lab2_transformers_and_transfer_learning
 
 # Activate conda environment
+# module load conda
+# conda create -n cs8321-lab2
+# conda activate cs8321-lab2
+# pip install -r requirements.txt
 module load conda
-conda create -n cs8321-lab2
-conda activate cs8321-lab2
-pip install -r requirements.txt
+conda activate cs8321-lab1
 
 #######################################################################################################################
 # Run script for training PyTorch model
