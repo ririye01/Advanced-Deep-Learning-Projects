@@ -1,8 +1,11 @@
 # Vision Transformer (ViT) From Scratch
 
 HF: https://huggingface.co/Traxap/ViT_Scratch_MNIST
+
 Medium Guide: https://medium.com/mlearning-ai/vision-transformers-from-scratch-pytorch-a-step-by-step-guide-96c3313c2e0c
+
 MNIST: https://huggingface.co/datasets/mnist
+
 ImageNet: https://image-net.org/challenges/LSVRC/
 
 For Training:
