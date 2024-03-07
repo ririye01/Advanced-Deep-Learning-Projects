@@ -4,8 +4,8 @@ datasets/
 runjob.out
 wandb/
 *.pth
+*.sh
 
->>>>>>> Stashed changes
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

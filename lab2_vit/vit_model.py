@@ -9,6 +9,8 @@ from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms import ToTensor
 from torchvision import transforms
 from torchvision.datasets.mnist import MNIST
+from torch.optim.lr_scheduler import StepLR
+from huggingface_hub import PyTorchModelHubMixin
 import os
 import pickle
 import wandb
@@ -107,7 +109,7 @@ class ViTBlock(nn.Module):
         return out
     
 # ViT Model (Pass Images Through Transformer Encoder Blocks, Then Classification MLP)
-class ViT(nn.Module):
+class ViT(nn.Module, PyTorchModelHubMixin):
     def __init__(self, chw, n_patches = 8, n_blocks = 2, hidden_d = 8, n_heads = 2, out_d = 10):
         super(ViT, self).__init__()
 
@@ -221,9 +223,21 @@ class CustomImageNetDataset(Dataset):
         return img_rgb, label
 
 # Training
-def main():
+def main(info = None):
 
-    # Load Data, Transform (Can Add `num_workers = 4` To DataLoader)
+    # Device Config
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    # Push Model
+    if info["push"]:
+        model = ViT(info["chw"], info["n_patches"], info["n_blocks"], info["hidden_d"], info["n_heads"], info["out_d"]).to(device)
+        model.load_state_dict(torch.load(info["checkpoint_path"], map_location = torch.device(device)))
+        model.eval()
+        model.push_to_hub(info["hf_dataset_repo_name"], token = info["hf_token"])
+        print(f"Model Pushed To {info['hf_dataset_repo_name']}")
+        return None
+
+    # Load Data, Transform
     # train_dataset = CustomImageNetDataset('../data_imagenet/train')
     # test_dataset = CustomImageNetDataset('../data_imagenet/val', train = False)
     # train_loader = DataLoader(train_dataset, batch_size = 128, shuffle = True)
@@ -231,108 +245,120 @@ def main():
 
     # Loading Data
     transform = ToTensor()
-    train_set = MNIST(root = "./../datasets", train = True, download = True, transform = transform)
-    test_set = MNIST(root = "./../datasets", train = False, download = True, transform = transform)
-    train_loader = DataLoader(train_set, shuffle = True, batch_size = 128)
-    test_loader = DataLoader(test_set, shuffle = False, batch_size = 128)
+    train_set = MNIST(root = "./../datasets", train = True, download = True, transform = transform) # num_workers = 4, pin_memory = True)
+    test_set = MNIST(root = "./../datasets", train = False, download = True, transform = transform) # num_workers = 4, pin_memory = True)
+    train_loader = DataLoader(train_set, shuffle = True, batch_size = info["batch_size"])
+    test_loader = DataLoader(test_set, shuffle = False, batch_size = info["batch_size"])
 
-    # Defining Model, Training Options
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    model = ViT(
-        (1, 28, 28), 
-        n_patches = 7, 
-        n_blocks = 4, 
-        hidden_d = 8, 
-        n_heads = 4, 
-        out_d = 10
-        # (3, 64, 64),
-        # n_patches = 16,
-        # n_blocks = 4,
-        # hidden_d = 512,
-        # n_heads = 8,
-        # out_d = 1000
-    ).to(device)
-    N_EPOCHS = 25
-    LR = 0.005
+    # Model Configuration
+    model = ViT(info["chw"], info["n_patches"], info["n_blocks"], info["hidden_d"], info["n_heads"], info["out_d"]).to(device)
 
     # Initialize WandB
-    # wandb.init(project = "ViT_Scratch", entity = "trevorous", id = None)
-    # wandb.watch(model, log = "all")
+    wandb.init(project = info["wandb_project"], entity = info["wandb_entity"], id = None)
+    wandb.watch(model, log = "all")
 
     # Log Hyperparameters
-    wandb.config = {
-        "learning_rate": 0.005,
-        "n_patches": 8,
-        "n_blocks": 2,
-        "hidden_d": 8,
-        "n_heads": 2,
-    }
+    wandb.config = {"learning_rate": info["learning_rate"], "n_patches": info["n_patches"],
+        "n_blocks": info["n_blocks"], "hidden_d": info["hidden_d"], "n_heads": info["n_heads"]}
 
     # Optimizer, Loss
-    optimizer = Adam(model.parameters(), lr = LR)
-    criterion = CrossEntropyLoss()
+    optimizer = torch.optim.AdamW(model.parameters(), lr = info["learning_rate"], betas = (0.9, 0.999), weight_decay = info["weight_decay"], eps = 1e-7)
+    scheduler = StepLR(optimizer, step_size = info["step_lr_stepsize"], gamma = 0.1)
+    criterion = torch.nn.CrossEntropyLoss()
+
+    # Learning Rate Warmup
+    WARMUP_EPOCHS = info["warmup_epochs"]
+    warmup_scheduler = torch.optim.lr_scheduler.LinearLR(optimizer, start_factor = 0.1, total_iters = WARMUP_EPOCHS)
 
     # Run Epochs
-    for epoch in trange(N_EPOCHS):
+    for epoch in trange(info["num_epochs"]):
 
-        # Initialize Loss
-        train_loss = 0.0
+        # Initialize Information
+        train_loss, train_correct, train_total = 0, 0, 0
 
         # Batch Loop
-        for batch in tqdm(train_loader, desc = "Training", leave = False):
+        for x, y in tqdm(train_loader, desc = "Training", leave = False):
 
-            # Get Batch, Move To Device
-            x, y = batch
+            # Move Batch To Device
             x, y = x.to(device), y.to(device)
 
             # Forward Pass, Loss, Backward Pass
+            optimizer.zero_grad()
             y_hat = model(x)
             loss = criterion(y_hat, y)
-            train_loss += loss.detach().cpu().item() / len(train_loader)
-            optimizer.zero_grad()
             loss.backward()
-            optimizer.step()
 
-        # Tell Me Information UwU!
-        print(f"Epoch {epoch + 1} / {N_EPOCHS} Loss: {train_loss:.2f}")
+            # Gradient Clipping
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm = 1.0)
+
+            optimizer.step()
+            train_loss += loss.item()
+            train_correct += (y_hat.argmax(1) == y).type(torch.float).sum().item()
+            train_total += y.size(0)
+
+        # Apply Warmup For First Epochs, Then Scheduler
+        if epoch < WARMUP_EPOCHS:
+            warmup_scheduler.step()
+        else:
+            scheduler.step()
+
+        # Compute Loss, Accuracy
+        train_loss /= len(train_loader)
+        train_accuracy = train_correct / train_total
+
+        # Model Evaluation (Same For Training)
+        val_loss, val_correct, val_total = 0, 0, 0
+        with torch.no_grad():
+            for x_val, y_val in tqdm(test_loader, desc = "Testing"):
+                x_val, y_val = x_val.to(device), y_val.to(device)
+                y_val_pred = model(x_val)
+                val_loss += criterion(y_val_pred, y_val).item()
+                val_correct += (y_val_pred.argmax(1) == y_val).type(torch.float).sum().item()
+                val_total += y_val.size(0)
+
+        # Compute Loss, Accuracy
+        val_loss /= len(test_loader)
+        val_accuracy = val_correct / val_total
 
         # Logging
         wandb.log({
-            "train_loss": train_loss, 
-            "epoch": epoch,
+            "train_loss": train_loss,
+            "train_accuracy": train_accuracy,
+            "val_loss": val_loss,
+            "val_accuracy": val_accuracy,
+            "learning_rate": optimizer.param_groups[0]['lr']
         })
 
-    # Test Loop (Same As Before)
-    with torch.no_grad():
-        correct, total = 0, 0
-        test_loss = 0.0
-        for batch in tqdm(test_loader, desc = "Testing"):
-            x, y = batch
-            x, y = x.to(device), y.to(device)
-            y_hat = model(x)
-            loss = criterion(y_hat, y)
-            test_loss += loss.detach().cpu().item() / len(test_loader)
-
-            # Need To Argmax And Stuff For Prediction
-            correct += torch.sum(torch.argmax(y_hat, dim = 1) == y).detach().cpu().item()
-            total += len(x)
-
-        # Tell Me How Bad I Am :)
-        print(f"Test Loss: {test_loss:.2f}")
-        print(f"Test Accuracy: {correct / total * 100:.2f}%")
-
-        # Log Test Loss, Accuracy
-        wandb.log({
-            "test_loss": test_loss, 
-            "test_accuracy": correct / total * 100, 
-            "epoch": epoch
-        })
-    
+        # Print Information
+        print(f"Epoch {epoch + 1}: Train Loss {train_loss:.4f}, Train Acc {train_accuracy:.4f}, Val Loss {val_loss:.4f}, Val Acc {val_accuracy:.4f}")
+        
     # Save Model
-    model_save_path = "./vit_mnist_model.pth"
+    model_save_path = "./vit_mnist_model_bigger.pth"
     torch.save(model.state_dict(), model_save_path)
     print(f"Model Saved!")
 
 if __name__ == "__main__":
-    main()
+
+    # Configurations
+    info = {
+        "chw": (1, 28, 28),
+        "n_patches": 7,
+        "n_blocks": 6, # 4
+        "hidden_d": 64, # 8
+        "n_heads": 8, # 4
+        "out_d": 10, # 10
+        "batch_size": 128,
+        "learning_rate": 1e-3,
+        "warmup_epochs": 5,
+        "num_epochs": 50,
+        "wandb_project": "",
+        "wandb_entity": "",
+        "weight_decay": 0.01,
+        "step_lr_stepsize": 10,
+        "push": False,
+        "checkpoint_path": "",
+        "hf_dataset_repo_name": "",
+        "hf_token": "",
+    }
+
+    main(info)
