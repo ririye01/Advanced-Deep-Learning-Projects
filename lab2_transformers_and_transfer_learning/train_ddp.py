@@ -4,10 +4,16 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from torchvision.datasets import MNIST
+
 from transformers import ViTConfig, ViTModel, ViTForImageClassification
+import wandb
 
 import os
 from typing import Tuple, Literal
+
+
+def wandb_init() -> None:
+    wandb.init(project="mnist-vit-finetune")
 
 
 def _transform_mnist_image() -> transforms.Compose:
@@ -35,57 +41,125 @@ def _load_vit_model() -> ViTModel:
     return ViTModel(config=configuration)
 
 
-def _modify_vit_model_for_mnist(model: ViTModel) -> nn.Module:
+def _modify_vit_model_for_mnist(model: ViTModel, num_classes: int = 10) -> nn.Module:
     """
     Adjusts the ViT model for MNIST dataset (10 classes).
     """
-    num_classes = 10
+    # Freeze all but last layer
+    for name, param in model.named_parameters():
+        is_not_trainable_layer = (
+            not name.startswith("encoder.layer.11")
+            and not name.startswith("pooler")
+            and not name.startswith("layernorm")
+        )
+        if is_not_trainable_layer:
+            param.requires_grad = False
+
     # Replace the classifier head with a new one for 10 classes (MNIST)
     model.classifier = nn.Linear(model.config.hidden_size, num_classes)
     return model
 
 
-def train(model, data_loader, criterion, optimizer, epoch, device) -> float:
-    model.train()
-    total_loss = 0
-    for batch_idx, (data, target) in enumerate(data_loader):
+def train_on_epoch(
+    model,
+    training_data_loader,
+    val_data_loader,
+    criterion,
+    optimizer,
+    epoch,
+    device,
+) -> float:
+    total_training_loss = 0
+    for batch_idx, (data, target) in enumerate(training_data_loader):
+        model.train()
         data, target = data.to(device), target.to(device)
 
         optimizer.zero_grad()
+
+        # ViT encoder has 2 outputs, final embedding vectors for all image tokens and a stack of attention weights.
+        # Here we are not using attention weights during training/validation.
+        # embeddings: [batch_size, n_tokens, embedding dim]  e.g.[16, 197, 768]
         outputs = model(data)
-        # print(outputs)
-        # print(type(outputs))
-        # input()
-        loss = criterion(outputs.logits, target)
-        loss.backward()
+        pooler_output = outputs.pooler_output
+        last_hidden_state = outputs.last_hidden_state
+
+        ## Extract [CLS] token (at index 0) 's embeddings used for classification ##
+        embedding_cls_token = last_hidden_state[:,0,:] # [batch_size, embedding dim]
+
+        training_loss = criterion(embedding_cls_token, target)
+        training_loss.backward()
+
         optimizer.step()
+        total_training_loss += training_loss.item()
 
-        total_loss += loss.item()
+        wandb.log({
+            "training_loss": training_loss.item(),
+        })
 
-        if batch_idx % 10 == 0:
-            print(f'Train Epoch: {epoch} [{batch_idx * len(data)}/{len(data_loader.dataset)}] Loss: {loss.item():.6f}')
+        if batch_idx % 100 == 0:
+            val_loss, val_accuracy = validate_on_epoch(
+                model=model,
+                data_loader=val_data_loader,
+                criterion=criterion,
+                device=device,
+                in_train_loop=False,
+            )
 
-    return total_loss / len(data_loader.dataset)
+            wandb.log({
+                "training_loss": training_loss.item(),
+                "validation_loss": val_loss,
+                "validation_accuracy": val_accuracy,
+            })
+
+            print(
+                f"Epoch: {epoch} [{batch_idx * len(data)}/{len(training_data_loader.dataset)}]" +
+                f"Training Loss: {training_loss.item():.6f} " +
+                f"**Validation Accuracy: {val_accuracy:.3f}**"
+            )
+
+        print(
+            f"Epoch: {epoch} [{batch_idx * len(data)}/{len(training_data_loader.dataset)}]" +
+            f"Training Loss: {training_loss.item():.6f} "
+        )
+
+    return total_training_loss / len(training_data_loader.dataset)
 
 
-def validate(model, data_loader, criterion, device) -> Tuple[float, float]:
+def validate_on_epoch(model, data_loader, criterion, device, in_train_loop=False) -> Tuple[float, float]:
     model.eval()
     validation_loss = 0
     correct = 0
     with torch.no_grad():
-        for data, target in data_loader:
+        for batch_idx, (data, target) in enumerate(data_loader):
             data, target = data.to(device), target.to(device)
-            output = model(data)
-            print(output)
-            print(type(output))
-            input()
-            validation_loss += criterion(output.logits, target).item()  # Sum up batch loss
-            pred = output.logits.argmax(dim=1, keepdim=True)  # Get the index of the max log-probability
+
+            # ViT encoder has 2 outputs, final embedding vectors for all image tokens and a stack of attention weights.
+            # Here we are not using attention weights during training/validation.
+            # embeddings: [batch_size, n_tokens, embedding dim]  e.g.[16, 197, 768]
+            outputs = model(data)
+            pooler_output = outputs.pooler_output
+            last_hidden_state = outputs.last_hidden_state
+
+            ## Extract [CLS] token (at index 0) 's embeddings used for classification ##
+            embedding_cls_token = outputs.last_hidden_state[:,0,:] # [batch_size, embedding dim]
+
+            validation_loss += criterion(embedding_cls_token, target).item()  # Sum up batch loss
+            pred = embedding_cls_token.argmax(dim=1, keepdim=True)  # Get the index of the max log-probability
             correct += pred.eq(target.view_as(pred)).sum().item()
+
+            if batch_idx % 10 == 0 and in_train_loop:
+                print(f"Validation Loss: {validation_loss / len(data_loader.dataset):.6f} ")
 
     validation_loss = validation_loss / len(data_loader.dataset)
     validation_accuracy = 100. * correct / len(data_loader.dataset)
-    print(f'\nValidation set: Average loss: {validation_loss:.4f}, Accuracy: {correct}/{len(data_loader.dataset)} ({validation_accuracy:.0f}%)\n')
+    print(f"\nValidation set: Average loss: {validation_loss:.4f}, Accuracy: {correct}/{len(data_loader.dataset)} ({validation_accuracy:.0f}%)\n")
+
+    # Log metrics to wandb
+    wandb.log({
+        "val_accuracy_per_epoch": validation_accuracy,
+        "val_loss_per_epoch": validation_loss,
+    })
+
     return validation_loss, validation_accuracy
 
 
@@ -104,29 +178,37 @@ def main() -> None:
     model = _modify_vit_model_for_mnist(model).to(DEVICE)
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    optimizer = optim.Adam(model.parameters(), lr=0.0001)
+    # scheduler = LinearWarmupCosineAnnealingLR(optimizer, warmup_epochs=10, max_epochs=40)
 
-    train_loader = DataLoader(mnist_trainset, batch_size=32, shuffle=True, sampler=None)
-    val_loader = DataLoader(mnist_valset, batch_size=32, shuffle=True, sampler=None)
+    train_loader = DataLoader(mnist_trainset, batch_size=64, shuffle=True, sampler=None)
+    val_loader = DataLoader(mnist_valset, batch_size=64, shuffle=False, sampler=None)
 
     NUM_EPOCHS = 15
+    val_accuracies = []
+
     for epoch in range(NUM_EPOCHS):
-        train_loss = train(
+        train_loss = train_on_epoch(
             model=model,
-            data_loader=train_loader,
+            training_data_loader=train_loader,
+            val_data_loader=val_loader,
             criterion=criterion,
             optimizer=optimizer,
             epoch=epoch,
             device=DEVICE,
         )
-        val_loss = validate(
+        val_loss, val_accuracy = validate_on_epoch(
             model=model,
             data_loader=val_loader,
             criterion=criterion,
             device=DEVICE,
         )
-
+        val_accuracies.append(val_accuracy)
+        if max(val_accuracies) == val_accuracy:
+            torch.save(model, f"model_checkpoints/ViT_MNIST_Finetune-v{epoch}.pth")
 
 
 if __name__ == "__main__":
+    wandb_init()
     main()
+    wandb.finish()
