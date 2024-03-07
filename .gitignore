@@ -1,7 +1,6 @@
 data/
 data_imagenet/
 datasets/
-runjob.out
 wandb/
 *.pth
 *.sh
