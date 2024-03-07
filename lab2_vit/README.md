@@ -11,11 +11,17 @@ ImageNet: https://image-net.org/challenges/LSVRC/
 For Training:
 
 For WandB Logging, Fill In The Information:
+
 "wandb_project": "",
+
 "wandb_entity": "",
 
 For Saving The Model To Huggingface, Fill In The Information:
+
 "push": True,
+
 "checkpoint_path": "",
+
 "hf_dataset_repo_name": "",
+
 "hf_token": "",
