@@ -48,7 +48,7 @@ def _freeze_entire_model_except_ending_linear_classifier(
     """
     Adjusts the ViT model for MNIST dataset (10 classes).
     """
-    # Freeze everything except the last layer
+    # Freeze everything except the prediction layer
     for name, param in model.named_parameters():
         param.requires_grad = False
 
