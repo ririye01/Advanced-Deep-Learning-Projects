@@ -1,3 +1,4 @@
+from struct import Struct
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -19,7 +20,7 @@ def wandb_init() -> None:
 def _transform_mnist_image() -> transforms.Compose:
     """
     Returns a composed transform to convert MNIST images to the format expected by ViT.
-    This typically includes resizing and normalization.
+    Handles the grayscaling of images, resizing, and normalization.
     """
     return transforms.Compose([
         transforms.Resize((224, 224)),  # Resize to the input size expected by ViT
@@ -42,53 +43,54 @@ def _load_vit_model() -> ViTModel:
 
 
 def _freeze_entire_model_except_ending_linear_classifier(
-    model: ViTModel,
+    model: nn.Module,
     num_classes: int = 10,
 ) -> nn.Module:
     """
-    Adjusts the ViT model for MNIST dataset (10 classes).
+    Freeze all parameters in a Vision Transformer (ViT) model except for the linear
+    classifier at the end, and adjust the classifier for a specified number of classes.
+
+    This function is particularly useful for transfer learning, where the pretrained
+    layers of the ViT model are used as feature extractors, and only the final classifier
+    is trained for a specific task.
+
+    Parameters
+    ----------
+    model : ViTModel
+        The pre-trained Vision Transformer model.
+    num_classes : int, optional
+        The number of classes for the final linear classifier, by default 10.
+
+    Returns
+    -------
+    nn.Module
+        The modified ViT model with all layers frozen except the ending linear classifier.
     """
     # Freeze everything except the last layer
     for name, param in model.named_parameters():
+        # Required to keep the `requires_grad` setting true for the pooler parameter.
+        # This issue is handled later by setting the gradients equal to None
+        # immediately after backpropogation every single time.
         if not name.startswith("pooler"):
           param.requires_grad = False
 
-    # Replace the classifier head with a new one for 10 classes (MNIST)
-    model.classifier = nn.Linear(model.config.hidden_size, num_classes)
-    return model
-
-
-def _freeze_all_layers_except_final_layer_and_linear_classifier(
-    model: ViTModel,
-    num_classes: int = 10,
-) -> nn.Module:
-    """
-    Adjusts the ViT model for MNIST dataset (10 classes).
-    """
-    # Freeze all but the bottleneck features.
-    for name, param in model.named_parameters():
-        is_not_trainable_layer = (
-            not name.startswith("encoder.layer.11")
-            and not name.startswith("pooler")
-            and not name.startswith("layernorm")
-        )
-        if is_not_trainable_layer:
-            param.requires_grad = False
-
-    # Replace the classifier head with a new one for 10 classes (MNIST)
+    # Replace the classifier head with a new one for `num_classes` classes
     model.classifier = nn.Linear(model.config.hidden_size, num_classes)
     return model
 
 
 def train_on_epoch(
-    model,
-    training_data_loader,
-    val_data_loader,
-    criterion,
-    optimizer,
-    epoch,
-    device,
+    model: nn.Module,
+    training_data_loader: DataLoader,
+    val_data_loader: DataLoader,
+    criterion: nn.CrossEntropyLoss,
+    optimizer: optim.Adam,
+    epoch: int,
+    device: Literal["cuda", "mps", "cpu"],
 ) -> float:
+    """
+    Run through an epoch.
+    """
     total_training_loss = 0
     for batch_idx, (data, target) in enumerate(training_data_loader):
         model.train()
@@ -101,25 +103,25 @@ def train_on_epoch(
         # embeddings: [batch_size, n_tokens, embedding dim]  e.g.[16, 197, 768]
         outputs = model(data)
         pooler_output = model.classifier(outputs.pooler_output)
-        last_hidden_state = outputs.last_hidden_state
-
-        ## Extract [CLS] token (at index 0) 's embeddings used for classification ##
-        embedding_cls_token = last_hidden_state[:,0,:] # [batch_size, embedding dim]
-        # training_loss = criterion(embedding_cls_token, target)
-
         training_loss = criterion(pooler_output, target)
 
+        # BACKPROPOGATE
         training_loss.backward()
+
+        # ZERO OUT THE GRADIENTS TO MAKE SURE THAT THEY ARE NOT UPDATED IN BACKPROPOGATION
+        # WE NEEDED TO DO THIS BECAUSE MODEL REFUSED TO TRAIN WITHOUT IT
         model.pooler.dense.weight.grad = model.pooler.dense.bias.grad = None
 
-        # EXPLICITLY RUN THIS ONLY WHEN THE
+        # TAKE A STEP THROUGH THE LOSS LANDSCAPE.
         optimizer.step()
         total_training_loss += training_loss.item()
 
+        # LOG BATCH TRAINING LOSS.
         wandb.log({
             "training_loss": training_loss.item(),
         })
 
+        # OUTPUT VALIDATION RESULTS AND LOG THEM IN WEIGHTS AND BIASES.
         if batch_idx % 500 == 0 and batch_idx != 0:
             val_loss, val_accuracy = validate_on_epoch(
                 model=model,
@@ -149,7 +151,13 @@ def train_on_epoch(
     return total_training_loss / len(training_data_loader.dataset)
 
 
-def validate_on_epoch(model, data_loader, criterion, device, in_train_loop=False) -> Tuple[float, float]:
+def validate_on_epoch(
+    model: ViTModel,
+    data_loader: DataLoader,
+    criterion: nn.CrossEntropyLoss,
+    device: Literal[""],
+    in_train_loop=False,
+) -> Tuple[float, float]:
     model.eval()
     validation_loss = 0
     correct = 0
@@ -163,12 +171,6 @@ def validate_on_epoch(model, data_loader, criterion, device, in_train_loop=False
             outputs = model(data)
             pooler_output = model.classifier(outputs.pooler_output)
             last_hidden_state = outputs.last_hidden_state
-
-            ## Extract [CLS] token (at index 0) 's embeddings used for classification ##
-            # embedding_cls_token = outputs.last_hidden_state[:,0,:] # [batch_size, embedding dim]
-            # validation_loss += criterion(embedding_cls_token, target).item()  # Sum up batch loss
-            # pred = embedding_cls_token.argmax(dim=1, keepdim=True)  # Get the index of the max log-probability
-
             validation_loss += criterion(pooler_output, target).item()  # Sum up batch loss
             pred = pooler_output.argmax(dim=1, keepdim=True)  # Get the index of the max log-probability
 
@@ -177,6 +179,7 @@ def validate_on_epoch(model, data_loader, criterion, device, in_train_loop=False
             if batch_idx % 10 == 0 and in_train_loop:
                 print(f"Validation Loss: {validation_loss / len(data_loader.dataset):.6f} ")
 
+    # Calculate overall validation loss
     validation_loss = validation_loss / len(data_loader.dataset)
     validation_accuracy = 100. * correct / len(data_loader.dataset)
     print(f"\nValidation set: Average loss: {validation_loss:.4f}, Accuracy: {correct}/{len(data_loader.dataset)} ({validation_accuracy:.0f}%)\n")
@@ -191,6 +194,8 @@ def validate_on_epoch(model, data_loader, criterion, device, in_train_loop=False
 
 
 def main() -> None:
+    # Cuda is ideal, but 3 of our team members own Macs.
+    # So, mps for the win.
     DEVICE: Literal["cuda", "mps", "cpu"] = (
         "cuda"
         if torch.cuda.is_available()
@@ -202,17 +207,15 @@ def main() -> None:
 
     mnist_trainset, mnist_valset = _load_mnist_data()
 
-    # WE RAN THIS CODE TWICE. THE ONLY THING WE SWITCHED UP IS THAT IN ONE OF THEM,
-    # WE FROZE ALL THE LAYERS EXCEPT THE FINAL LINEAR CLASSIFIER, AND IN THE OTHER
-    # ONE, WE FROZE ALL THE LAYERS EXCEPT THE FINAL LAYER IN THE MODEL AND THE LINEAR
-    # CLASSIFIER.
+    # Load in ViT model and freeze all the layers except for a single Linear classification
+    # layer
     model = _load_vit_model()
-    # model = _freeze_all_layers_except_final_layer_and_linear_classifier(model).to(DEVICE)
     model = _freeze_entire_model_except_ending_linear_classifier(model).to(DEVICE)
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=5e-5)
 
+    # Load training and validation in with batch sizes of 64
     train_loader = DataLoader(mnist_trainset, batch_size=64, shuffle=True, sampler=None)
     val_loader = DataLoader(mnist_valset, batch_size=64, shuffle=False, sampler=None)
 
@@ -220,6 +223,7 @@ def main() -> None:
     val_accuracies = []
 
     for epoch in range(NUM_EPOCHS):
+        # Train on all the training data in a single epoch.
         train_loss = train_on_epoch(
             model=model,
             training_data_loader=train_loader,
@@ -229,6 +233,7 @@ def main() -> None:
             epoch=epoch,
             device=DEVICE,
         )
+        # Report back validation metrics for every epoch.
         val_loss, val_accuracy = validate_on_epoch(
             model=model,
             data_loader=val_loader,
@@ -236,6 +241,8 @@ def main() -> None:
             device=DEVICE,
         )
         val_accuracies.append(val_accuracy)
+
+        # Save model only if it outperforms all the other models on Validation Accuracy.
         if max(val_accuracies) == val_accuracy:
             torch.save(model, f"ViT_MNIST_Finetune-v{epoch}.pth")
 
