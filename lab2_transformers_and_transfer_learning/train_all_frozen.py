@@ -162,7 +162,6 @@ def validate_on_epoch(model, data_loader, criterion, device, in_train_loop=False
             # embeddings: [batch_size, n_tokens, embedding dim]  e.g.[16, 197, 768]
             outputs = model(data)
             pooler_output = model.classifier(outputs.pooler_output)
-            print(pooler_output.shape)
             last_hidden_state = outputs.last_hidden_state
 
             ## Extract [CLS] token (at index 0) 's embeddings used for classification ##
