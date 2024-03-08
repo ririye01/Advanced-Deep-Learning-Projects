@@ -1,0 +1,49 @@
+{
+    "os": "macOS-13.5.2-arm64-arm-64bit",
+    "python": "3.11.7",
+    "heartbeatAt": "2024-03-07T00:47:18.184030",
+    "startedAt": "2024-03-07T00:47:17.827934",
+    "docker": null,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "/Users/reece/Desktop/cs8321/Advanced-Deep-Learning-Projects/lab2_transformers_and_transfer_learning/train_ddp.py",
+    "codePathLocal": "train_ddp.py",
+    "codePath": "lab2_transformers_and_transfer_learning/train_ddp.py",
+    "git": {
+        "remote": "git@github.com:ririye01/Advanced-Deep-Learning-Projects.git",
+        "commit": "bbcd5a3b777d6aec70d9f41aa3d24cfbf06d4f56"
+    },
+    "email": "ririye01@gmail.com",
+    "root": "/Users/reece/Desktop/cs8321/Advanced-Deep-Learning-Projects",
+    "host": "MacBook-Pro-91.local",
+    "username": "reece",
+    "executable": "/opt/homebrew/opt/python@3.11/bin/python3.11",
+    "cpu_count": 10,
+    "cpu_count_logical": 10,
+    "cpu_freq": {
+        "current": 3228,
+        "min": 600,
+        "max": 3228
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 3228,
+            "min": 600,
+            "max": 3228
+        }
+    ],
+    "disk": {
+        "/": {
+            "total": 926.3517189025879,
+            "used": 11.103530883789062
+        }
+    },
+    "gpuapple": {
+        "type": "arm",
+        "vendor": "Apple"
+    },
+    "memory": {
+        "total": 16.0
+    }
+}
