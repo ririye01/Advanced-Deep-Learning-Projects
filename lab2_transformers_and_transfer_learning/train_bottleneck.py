@@ -41,33 +41,37 @@ def _load_vit_model() -> ViTModel:
     return ViTModel(config=configuration)
 
 
-def _freeze_entire_model_except_ending_linear_classifier(
-    model: ViTModel,
-    num_classes: int = 10,
-) -> nn.Module:
-    """
-    Adjusts the ViT model for MNIST dataset (10 classes).
-    """
-    # Freeze everything except the prediction layer
-    for name, param in model.named_parameters():
-        param.requires_grad = False
-
-    # Replace the classifier head with a new one for 10 classes (MNIST)
-    # This makes sure that the bottleneck features (features in the Linear layer)
-    # are trainable.
-    model.classifier = nn.Linear(model.config.hidden_size, num_classes)
-    return model
-
-
 def _freeze_all_layers_except_bottleneck_and_linear_classifier(
-    model: ViTModel,
+    model: nn.Module,
     num_classes: int = 10,
 ) -> nn.Module:
     """
-    Adjusts the ViT model for MNIST dataset (10 classes).
+    Adjust a Vision Transformer (ViT) model by freezing all layers except for the final
+    layer and the linear classifier. The classifier is also adjusted to accommodate the
+    specified number of classes.
+
+    This method is useful for fine-tuning where the last layer of the ViT model and the
+    classifier are trainable. It allows the model to adapt more specifically to the
+    features relevant to the new task while keeping the majority of the model fixed.
+
+    Parameters
+    ----------
+    model : ViTModel
+        The pre-trained Vision Transformer model.
+    num_classes : int, optional
+        The number of classes for the final linear classifier, by default 10.
+
+    Returns
+    -------
+    nn.Module
+        The modified ViT model with all layers frozen except the final layer and the
+        linear classifier.
     """
     # Freeze all but the bottleneck features.
     for name, param in model.named_parameters():
+        # The bottleneck layer is internally represented in this PyTorch model as
+        # `encoder.layer.11`, so we make sure that these layers can still be
+        # backpropogated through.
         is_not_trainable_layer = (
             not name.startswith("encoder.layer.11")
             and not name.startswith("pooler")
@@ -82,13 +86,13 @@ def _freeze_all_layers_except_bottleneck_and_linear_classifier(
 
 
 def train_on_epoch(
-    model,
-    training_data_loader,
-    val_data_loader,
-    criterion,
-    optimizer,
-    epoch,
-    device,
+    model: nn.Module,
+    training_data_loader: DataLoader,
+    val_data_loader: DataLoader,
+    criterion: nn.CrossEntropyLoss,
+    optimizer: optim.Adam,
+    epoch: int,
+    device: Literal["cuda", "mps", "cpu"],
 ) -> float:
     total_training_loss = 0
     for batch_idx, (data, target) in enumerate(training_data_loader):
@@ -101,22 +105,23 @@ def train_on_epoch(
         # Here we are not using attention weights during training/validation.
         # embeddings: [batch_size, n_tokens, embedding dim]  e.g.[16, 197, 768]
         outputs = model(data)
-        pooler_output = outputs.pooler_output
         last_hidden_state = outputs.last_hidden_state
 
-        ## Extract [CLS] token (at index 0) 's embeddings used for classification ##
+        ## Extract [CLS] token (at index 0) 's embeddings used for classification
+        ## Inspirartion: https://medium.com/@lucrece.shin/ch-9-vision-transformer-part-i-introduction-and-fine-tuning-in-pytorch-14674920c2ea
         embedding_cls_token = last_hidden_state[:,0,:] # [batch_size, embedding dim]
-
         training_loss = criterion(embedding_cls_token, target)
         training_loss.backward()
 
         optimizer.step()
         total_training_loss += training_loss.item()
 
+        # Log batch training every single time
         wandb.log({
             "training_loss": training_loss.item(),
         })
 
+        # Log validation data every 100 batches
         if batch_idx % 100 == 0:
             val_loss, val_accuracy = validate_on_epoch(
                 model=model,
@@ -146,7 +151,13 @@ def train_on_epoch(
     return total_training_loss / len(training_data_loader.dataset)
 
 
-def validate_on_epoch(model, data_loader, criterion, device, in_train_loop=False) -> Tuple[float, float]:
+def validate_on_epoch(
+    model: ViTModel,
+    data_loader: DataLoader,
+    criterion: nn.CrossEntropyLoss,
+    device: Literal[""],
+    in_train_loop: bool = False,
+) -> Tuple[float, float]:
     model.eval()
     validation_loss = 0
     correct = 0
@@ -171,6 +182,7 @@ def validate_on_epoch(model, data_loader, criterion, device, in_train_loop=False
             if batch_idx % 10 == 0 and in_train_loop:
                 print(f"Validation Loss: {validation_loss / len(data_loader.dataset):.6f} ")
 
+    # Collect and output validation metrics
     validation_loss = validation_loss / len(data_loader.dataset)
     validation_accuracy = 100. * correct / len(data_loader.dataset)
     print(f"\nValidation set: Average loss: {validation_loss:.4f}, Accuracy: {correct}/{len(data_loader.dataset)} ({validation_accuracy:.0f}%)\n")
@@ -201,12 +213,11 @@ def main() -> None:
     # CLASSIFIER.
     model = _load_vit_model()
     model = _freeze_all_layers_except_bottleneck_and_linear_classifier(model).to(DEVICE)
-    # model = _freeze_entire_model_except_ending_linear_classifier(model).to(DEVICE)
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.0001)
-    # scheduler = LinearWarmupCosineAnnealingLR(optimizer, warmup_epochs=10, max_epochs=40)
 
+    # Batch sizes of 64 in our dataloaders
     train_loader = DataLoader(mnist_trainset, batch_size=64, shuffle=True, sampler=None)
     val_loader = DataLoader(mnist_valset, batch_size=64, shuffle=False, sampler=None)
 
