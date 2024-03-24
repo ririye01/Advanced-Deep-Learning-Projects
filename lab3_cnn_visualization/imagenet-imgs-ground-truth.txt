@@ -1,0 +1,5 @@
+n13044778 -> 995 -> earthstart
+n13052670 -> 996 -> 'hen-of-the-woods, hen of the woods, Polyporus frondosus, Grifola frondosa',
+n13054560 -> 997 -> 'bolete'
+n13133613 -> 998 -> 'ear, spike, capitulum'
+n15075141 -> 999 -> 'toilet tissue, toilet paper, bathroom tissue'
