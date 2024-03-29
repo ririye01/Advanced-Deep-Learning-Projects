@@ -2,6 +2,10 @@
 __pycache__/
 *.py[cod]
 *$py.class
+data/
+datasets/
+lab2_vit/
+TORCH_HOME*
 
 # C extensions
 *.so
